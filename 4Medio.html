@@ -201,8 +201,8 @@ function render(){
     h+='<div class="f"><div class="l">Completa la frase</div><p style="margin:0 0 6px">Hoy aprendí que…</p><input type="text" id="c1" aria-label="Hoy aprendí que" value="'+esc(S.a.c1||'')+'"><p style="margin:8px 0 6px">Lo descubrí al…</p><input type="text" id="c2" aria-label="Lo descubrí al" value="'+esc(S.a.c2||'')+'"><p style="margin:8px 0 6px">Me sirve para…</p><input type="text" id="c3" aria-label="Me sirve para" value="'+esc(S.a.c3||'')+'"></div>';
     h+=fieldHTML({k:'central',t:'long',l:'Responde la pregunta central con lo que viste hoy: '+CONFIG.central});
     h+=fieldHTML({k:'meta',t:'long',l:CONFIG.meta});
-    h+='<div class="err" id="err" role="alert"></div><div class="actions"><button class="btn pri" type="button" id="em">Enviar por correo al profesor</button><button class="btn" type="button" id="dl">Descargar evidencia (archivo con fotos)</button><button class="btn" type="button" id="sh">Compartir por WhatsApp o correo</button><button class="btn" type="button" id="pdf">Guardar como PDF</button><button class="btn" type="button" id="clr">Borrar mi registro de este dispositivo</button></div>';
-    h+='<p class="note">Para enviar tu trabajo: pulsa <b>Enviar por correo al profesor</b>. Se descargará tu archivo de evidencia y se abrirá tu correo con el mensaje listo; <b>adjunta el archivo descargado</b> (lleva tus fotos) y envíalo. La evidencia es un archivo con tu nombre, la fecha y la hora, tus respuestas y tus fotos. Envíalo hoy a tu profesor. Tu registro se guarda solo en este celular, y se pierde si borras los datos del navegador.</p>';
+    h+='<div class="err" id="err" role="alert"></div><div class="actions"><button class="btn pri" type="button" id="em">Enviar por correo al profesor</button><button class="btn" type="button" id="dl">Descargar evidencia (opcional, archivo con fotos)</button><button class="btn" type="button" id="sh">Compartir por WhatsApp o correo</button><button class="btn" type="button" id="pdf">Guardar como PDF</button><button class="btn" type="button" id="clr">Borrar mi registro de este dispositivo</button></div>';
+    h+='<p class="note">Para enviar tu trabajo: pulsa <b>Enviar por correo al profesor</b>. Se abrirá tu correo con tus respuestas ya escritas y la dirección del profesor; <b>adjunta tus fotos desde la galería</b> y envíalo. Si prefieres, usa también <b>Descargar evidencia</b>: es un archivo con tu nombre, la fecha y la hora, tus respuestas y tus fotos. Envíalo hoy a tu profesor. Tu registro se guarda solo en este celular, y se pierde si borras los datos del navegador.</p>';
   }else{
     if(s.intro)h+='<p class="intro">'+esc(s.intro)+'</p>';
     s.fields.forEach(f=>h+=fieldHTML(f));
@@ -251,16 +251,16 @@ function fname(){return 'Evidencia_'+CONFIG.id+'_'+(S.student||'sin-nombre').nor
 function need(){if(!(S.student||'').trim()){const e=$('err');e.style.display='block';e.textContent='Escribe tu nombre al inicio de la página antes de guardar la evidencia.';window.scrollTo(0,0);setStatus('Falta tu nombre.');return false}const e=$('err');if(e)e.style.display='none';return true}
 function doDownload(){if(!need())return;const blob=new Blob([evidenceHTML()],{type:'text/html'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname();document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);setStatus('Evidencia descargada: '+fname()+'. Revisa tu carpeta de descargas y envíala a tu profesor.')}
 function summaryText(){let o='Estudiante: '+S.student+'\nCurso: '+S.course+'\nActividad: '+CONFIG.title+'\nFecha: '+fmt(new Date())+'\n';
-  CONFIG.steps.forEach(s=>{o+='\n== '+s.title+' ==\n';s.fields.forEach(f=>{if(f.t==='photo'){o+=f.l+': '+(S.p[f.k]?'(foto en el archivo adjunto)':'(sin foto)')+'\n';return}let v=S.a[f.k];if(Array.isArray(v))v=v.join(', ');o+=f.l+': '+(v||'(sin respuesta)')+'\n'})});
+  CONFIG.steps.forEach(s=>{o+='\n== '+s.title+' ==\n';s.fields.forEach(f=>{if(f.t==='photo'){o+=f.l+': '+(S.p[f.k]?'(foto: la adjunto desde mi galería)':'(sin foto)')+'\n';return}let v=S.a[f.k];if(Array.isArray(v))v=v.join(', ');o+=f.l+': '+(v||'(sin respuesta)')+'\n'})});
   o+='\n== Cierre ==\nHoy aprendí que '+(S.a.c1||'-')+'; lo descubrí al '+(S.a.c2||'-')+'; me sirve para '+(S.a.c3||'-')+'.\nPregunta central: '+(S.a.central||'-')+'\n'+CONFIG.meta+': '+(S.a.meta||'-')+'\n';return o}
-function doEmail(){if(!need())return;doDownload();
+function doEmail(){if(!need())return;
   const to=CONFIG.email,subj='Evidencia salida MUG · '+S.course+' · '+S.student;
-  let body=summaryText()+'\n(Adjunto mi archivo de evidencia con fotos: '+fname()+')';
+  let body=summaryText()+'\n(Adjunto mis fotos desde la galería del celular.)';
   const mk=b=>'mailto:'+to+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(b);
   while(mk(body).length>1900&&body.length>200){body=body.slice(0,body.length-150)}
-  if(body.length<summaryText().length)body+='\n[...resumen recortado: el detalle completo está en el archivo adjunto]';
-  setTimeout(()=>{window.location.href=mk(body)},700);
-  setStatus('Se descargó tu archivo '+fname()+'. En tu correo, ADJUNTA ese archivo antes de enviar.')}
+  if(body.length<summaryText().length)body+='\n[...resumen recortado]';
+  window.location.href=mk(body);
+  setStatus('Se abrió tu correo con el mensaje listo. Adjunta tus fotos desde la galería y envíalo.')}
 function doShare(){if(!need())return;const file=new File([evidenceHTML()],fname(),{type:'text/html'});
   if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:'Evidencia '+CONFIG.title,text:'Evidencia de '+S.student+' · '+S.course}).then(()=>setStatus('Compartido.')).catch(()=>setStatus('Compartir cancelado.'))}
   else{doDownload();setStatus('Tu navegador no permite compartir directo. Se descargó el archivo: envíalo por WhatsApp o correo.')}}
